@@ -1,6 +1,8 @@
 import os
 from typing import BinaryIO
+from pathlib import Path
 
+HERE = Path(__file__).resolve().parent
 
 def find_chunk_boundaries(
     file: BinaryIO,
@@ -50,7 +52,7 @@ def find_chunk_boundaries(
 
 
 ## Usage
-with open(..., "rb") as f:
+with open(HERE / "corpus.txt", "rb") as f:
     num_processes = 4
     boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
 
