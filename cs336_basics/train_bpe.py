@@ -1,3 +1,5 @@
+from concurrent.futures.process import ProcessPoolExecutor
+from multiprocessing import cpu_count
 import collections
 import regex as re
 assert re.__name__ == "regex"  # sanity check
@@ -41,6 +43,13 @@ def pre_tokenize(text: str, special_tokens: set[str]) -> collections.Counter[byt
     return freq_table
 
 
+def _work_slice(path, start, end, special_tokens) -> collections.Counter[bytes]:
+    with open(path, "rb") as f:
+        f.seek(start)
+        text = f.read(end - start).decode("utf-8", errors="ignore")
+    return pre_tokenize(text, special_tokens)
+
+
 def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tuple[
     dict[int, bytes], list[tuple[bytes, bytes]]]:
     vocab = init_vocab(special_tokens)
@@ -48,15 +57,22 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
 
     special_tokens = set(special_tokens)
     merges: list[tuple[bytes, bytes]] = []
+    w_counts: collections.Counter[bytes] = collections.Counter()
+    num_worker = cpu_count()
 
     # read the file and split them into chunks
     with open(input_path, "rb") as f:
-        boundaries = find_chunk_boundaries(f, 1, '<|endoftext|>'.encode('utf8'))
-        for start, end in zip(boundaries[:-1], boundaries[1:]):
-            f.seek(start)
-            text = f.read(end - start).decode("utf-8", errors="ignore")
+        boundaries = find_chunk_boundaries(f, num_worker, '<|endoftext|>'.encode('utf8'))
 
-    w_counts = pre_tokenize(text, special_tokens)
+    jobs = list(zip(boundaries[:-1], boundaries[1:]))
+
+    # multi process 1490 ms train_bpe(), pre_tokenize is not bottleneck
+    with ProcessPoolExecutor(max_workers=min(num_worker, len(jobs))) as executor:
+        futures = [executor.submit(_work_slice, input_path, start, end, special_tokens) for start, end in jobs]
+        for fu in futures:
+            w_counts.update(fu.result())
+    # single process: pre_tokenize 1271 ms / 2185 ms 58% of train_bpe()
+    # w_counts = pre_tokenize(text, special_tokens)
 
     w_freq = {
         tuple(bytes([b]) for b in word): cnt for word, cnt in w_counts.items()
