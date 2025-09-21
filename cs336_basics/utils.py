@@ -1,3 +1,4 @@
+import base64
 import json
 import time, os, sys
 from pathlib import Path
@@ -5,6 +6,14 @@ from pathlib import Path
 VOCAB_FILE = "vocab.json"
 MERGES_FILE = "merges.txt"
 HERE = Path(__file__).resolve().parent
+
+
+def _b64encode(b: bytes) -> str:
+    return base64.b64encode(b).decode("ascii")
+
+
+def _b64decode(s: str) -> bytes:
+    return base64.b64decode(s.encode("ascii"))
 
 
 def now():
@@ -41,9 +50,8 @@ def save_output(vocab: dict[int, bytes], merges: list[tuple[bytes, bytes]], outp
 
     with open(HERE / output_dir / MERGES_FILE, "w", encoding="utf-8") as f:
         for a, b in merges:
-            str1 = a.decode("utf-8", errors="ignore")
-            str2 = b.decode("utf-8", errors="ignore")
-            f.write(f"'{str1}' '{str2}'\n")
+            rec = {"a": _b64encode(a), "b": _b64encode(b)}
+            f.write(json.dumps(rec, separators=(",", ":")) + "\n")
     print("Wrote merges to", output_dir)
 
 
@@ -56,3 +64,21 @@ def get_longest_token(input_path):
     longest_token = raw.decode("utf-8", errors="ignore")
     print(f"Longest token: {longest_token}, length: {len(raw)}, raw bytes: {raw}")
     return longest_token
+
+
+def load_vocab(vocab_file) -> dict[int, bytes]:
+    data = json.load(open(vocab_file, "r", encoding="utf-8"))
+    deserializable_vocab = {k: bytes(v) for k, v in data.items()}
+    return deserializable_vocab
+
+
+def load_merges(merges_file) -> list[tuple[bytes, bytes]]:
+    merges = []
+    with open(merges_file, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            # use base64 to guarantee no ambiguity
+            merges.append((_b64decode(rec["a"]), _b64decode(rec["b"])))
+    return merges
