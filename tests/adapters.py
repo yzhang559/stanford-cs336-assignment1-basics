@@ -16,6 +16,7 @@ from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
 from cs336_basics.RMSNorm import RMSNorm
 from cs336_basics.RoPE import RoPE
 from cs336_basics.SwiGLU import SwiGLU
+from cs336_basics.Transformer import TransformerBlock, TransformerLM
 from cs336_basics.tokenizer import Tokenizer
 from cs336_basics.train_bpe import train_bpe
 
@@ -303,8 +304,26 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    block = TransformerBlock(d_model = d_model, num_heads = num_heads, d_ff = d_ff, max_seq_len= max_seq_len, theta = theta)
+    _, seq_len, _ = in_features.shape
+    positions = torch.arange(seq_len, device=in_features.device).reshape(1, -1)
+    key_map = {
+        "attn.q_proj.weight": "mha.W_Q.weight",
+        "attn.k_proj.weight": "mha.W_K.weight",
+        "attn.v_proj.weight": "mha.W_V.weight",
+        "attn.output_proj.weight": "mha.W_O.weight",
+        "ln1.weight": "norm1.gain",
+        "ffn.w1.weight": "ffn.w1.weight",
+        "ffn.w2.weight": "ffn.w2.weight",
+        "ffn.w3.weight": "ffn.w3.weight",
+        "ln2.weight": "norm2.gain",
+    }
+    new_state_dict = {key_map[k]: v for k, v in weights.items()}
+    missing, unexpected = block.load_state_dict(new_state_dict, strict=True)
+    # print("missing:", missing)
+    # print("unexpected:", unexpected)
 
+    return block.forward(in_features, position=positions)
 
 def run_transformer_lm(
     vocab_size: int,
@@ -385,7 +404,39 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    lm = TransformerLM(vocab_size=vocab_size, context_length=context_length, d_model=d_model, num_layers=num_layers, num_heads=num_heads, d_ff=d_ff, theta=rope_theta)
+
+    new_state_dict: dict[str, Tensor] = {"token_embedding.embedding": weights["token_embeddings.weight"]}
+
+    for layer_idx in range(num_layers):
+        ref_prefix = f"layers.{layer_idx}."
+        model_prefix = f"blocks.{layer_idx}."
+
+        # Attention projections
+        new_state_dict[model_prefix + "mha.W_Q.weight"] = weights[ref_prefix + "attn.q_proj.weight"]
+        new_state_dict[model_prefix + "mha.W_K.weight"] = weights[ref_prefix + "attn.k_proj.weight"]
+        new_state_dict[model_prefix + "mha.W_V.weight"] = weights[ref_prefix + "attn.v_proj.weight"]
+        new_state_dict[model_prefix + "mha.W_O.weight"] = weights[ref_prefix + "attn.output_proj.weight"]
+
+        # Norms
+        new_state_dict[model_prefix + "norm1.gain"] = weights[ref_prefix + "ln1.weight"]
+        new_state_dict[model_prefix + "norm2.gain"] = weights[ref_prefix + "ln2.weight"]
+
+        # FFN (your module is called `ffn`, not `ff`)
+        new_state_dict[model_prefix + "ffn.w1.weight"] = weights[ref_prefix + "ffn.w1.weight"]
+        new_state_dict[model_prefix + "ffn.w2.weight"] = weights[ref_prefix + "ffn.w2.weight"]
+        new_state_dict[model_prefix + "ffn.w3.weight"] = weights[ref_prefix + "ffn.w3.weight"]
+
+    # final norm
+    new_state_dict["norm_final.gain"] = weights["ln_final.weight"]
+
+    # lm head
+    new_state_dict["lm_head.weight"] = weights["lm_head.weight"]
+
+    missing, unexpected = lm.load_state_dict(new_state_dict, strict=True)
+    # print("missing:", missing)
+    # print("unexpected:", unexpected)
+    return lm.forward(in_indices)
 
 
 def run_rmsnorm(
