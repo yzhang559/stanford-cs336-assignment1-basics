@@ -17,6 +17,7 @@ from cs336_basics.RMSNorm import RMSNorm
 from cs336_basics.RoPE import RoPE
 from cs336_basics.SwiGLU import SwiGLU
 from cs336_basics.Transformer import TransformerBlock, TransformerLM
+from cs336_basics.cross_entropy import cross_entropy
 from cs336_basics.tokenizer import Tokenizer
 from cs336_basics.train_bpe import train_bpe
 
@@ -533,7 +534,7 @@ def run_cross_entropy(
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
-    raise NotImplementedError
+    return cross_entropy(inputs, targets)
 
 
 def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
