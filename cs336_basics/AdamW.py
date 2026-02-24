@@ -1,3 +1,5 @@
+import math
+
 import torch
 
 class AdamW(torch.optim.Optimizer):
@@ -49,3 +51,38 @@ class AdamW(torch.optim.Optimizer):
                 p.data.add_(p.data, alpha=-lr * weight_decay)
 
         return loss
+
+
+def learning_rate_schedule(t: int, max_learning_rate: float, min_learning_rate: float, warmup_iters: int,
+                           cosine_cycle_iters: int) -> float:
+    """
+    Cosine learning rate schedule with linear warmup.
+
+    Three phases:
+    1. Warmup (t < warmup_iters): Linear increase from 0 to max_lr
+    2. Cosine decay (warmup_iters <= t <= cosine_cycle_iters): Smoothly decrease from max_lr to min_lr
+    3. Constant (t > cosine_cycle_iters): Stay at min_lr
+
+    The schedule looks like:
+        lr
+        ^
+    max |    /‾‾‾\
+        |   /      \___________
+    min |  /
+        +-------------------------> t
+           warmup  cosine_cycle
+    """
+    # Phase 1: Linear warmup - ramp up from 0 to max_learning_rate
+    if t < warmup_iters:
+        return max_learning_rate * t / warmup_iters
+
+    # Phase 2: Cosine annealing - smoothly decay from max to min
+    # cos(0) = 1, cos(π) = -1, so (1 + cos(x))/2 goes from 1 to 0
+    elif t <= cosine_cycle_iters:
+        progress = (t - warmup_iters) / (cosine_cycle_iters - warmup_iters)  # 0 to 1
+        cosine_decay = 0.5 * (1 + math.cos(math.pi * progress))  # 1 to 0
+        return min_learning_rate + cosine_decay * (max_learning_rate - min_learning_rate)
+
+    # Phase 3: After cosine cycle, stay at minimum learning rate
+    else:
+        return min_learning_rate
