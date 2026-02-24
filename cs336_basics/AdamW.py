@@ -1,12 +1,13 @@
 import math
+from typing import Iterable
 
 import torch
+
 
 class AdamW(torch.optim.Optimizer):
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01):
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
         super(AdamW, self).__init__(params, defaults)
-
 
     def step(self, closure=None):
         loss = None
@@ -38,7 +39,7 @@ class AdamW(torch.optim.Optimizer):
                 v = state['v']
 
                 # Update biased first and second moment estimates
-                m.mul_(beta1).add_(g, alpha=1 - beta1)       # m = β1*m + (1-β1)*g
+                m.mul_(beta1).add_(g, alpha=1 - beta1)  # m = β1*m + (1-β1)*g
                 v.mul_(beta2).addcmul_(g, g, value=1 - beta2)  # v = β2*v + (1-β2)*g²
 
                 # Compute bias-corrected learning rate
@@ -86,3 +87,21 @@ def learning_rate_schedule(t: int, max_learning_rate: float, min_learning_rate: 
     # Phase 3: After cosine cycle, stay at minimum learning rate
     else:
         return min_learning_rate
+
+
+def gradient_clipping(params: Iterable[torch.nn.Parameter], max_norm: float):
+    """
+    Clip gradients so their combined L2 norm is at most max_norm.
+    Modifies gradients in-place.
+    """
+    # Collect all gradients that exist
+    grads = [p.grad for p in params if p.grad is not None]
+
+    # Compute total L2 norm across all gradients: sqrt(sum of all grad elements squared)
+    total_norm = torch.sqrt(sum(torch.sum(g ** 2) for g in grads))
+
+    # If norm exceeds max, scale all gradients down proportionally
+    if total_norm > max_norm:
+        scale = max_norm / total_norm
+        for g in grads:
+            g.mul_(scale)  # in-place modification
