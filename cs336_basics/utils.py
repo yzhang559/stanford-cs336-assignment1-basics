@@ -68,7 +68,7 @@ def get_longest_token(input_path):
 
 def load_vocab(vocab_file) -> dict[int, bytes]:
     data = json.load(open(vocab_file, "r", encoding="utf-8"))
-    deserializable_vocab = {k: bytes(v) for k, v in data.items()}
+    deserializable_vocab = {int(k): bytes(v) for k, v in data.items()}
     return deserializable_vocab
 
 

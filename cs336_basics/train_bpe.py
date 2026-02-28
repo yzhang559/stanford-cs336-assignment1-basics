@@ -162,3 +162,4 @@ if __name__ == '__main__':
     vocab, merges = train_bpe(HERE / "corpus.txt", 256 + 6, special_tokens=["<|endoftext|>"])
     print(vocab)
     print(merges)
+
