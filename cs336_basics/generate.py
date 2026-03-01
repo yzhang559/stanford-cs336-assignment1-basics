@@ -1,7 +1,11 @@
+import os
+
 from cs336_basics.Transformer import TransformerLM
 from cs336_basics.tokenizer import Tokenizer
 
 import torch
+
+from cs336_basics.train import load_model_from_checkpoint
 
 
 def temperature_scaling(logits: torch.Tensor, temperature: float) -> torch.Tensor:
@@ -12,30 +16,30 @@ def top_p_filtering(probs: torch.Tensor, top_p: float) -> torch.Tensor:
     """Filter and renormalize probabilities to keep only top-p nucleus."""
     if top_p >= 1.0:
         return probs
-    
+
     sorted_probs, sorted_idx = probs.sort(dim=-1, descending=True)
     cumsum = torch.cumsum(sorted_probs, dim=-1)
-    
+
     # Keep tokens where cumsum hasn't exceeded top_p yet, plus the first one that crosses
     mask = cumsum - sorted_probs <= top_p
-    
+
     # Zero out tokens not in nucleus
     sorted_probs = sorted_probs * mask
-    
+
     # Scatter back to original order
     filtered_probs = torch.zeros_like(probs)
     filtered_probs.scatter_(dim=-1, index=sorted_idx, src=sorted_probs)
-    
+
     # Renormalize
     filtered_probs = filtered_probs / filtered_probs.sum(dim=-1, keepdim=True)
-    
+
     return filtered_probs
 
 
 def decoding(model: TransformerLM, tokenizer: Tokenizer, prompt: str, max_num_tokens: int,
              temperature: float = 0.7, top_p: float = 0.95, eos_token: str = "<docline>") -> str:
     model.eval()
-    tokens = list(tokenizer.encode(prompt))
+    tokens = tokenizer.encode(prompt)
     eos_token_id = tokenizer.encode(eos_token)[0]
 
     with torch.no_grad():
@@ -68,3 +72,22 @@ def decoding(model: TransformerLM, tokenizer: Tokenizer, prompt: str, max_num_to
             tokens.append(next_token)
 
     return tokenizer.decode(tokens)
+
+
+if __name__ == '__main__':
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
+    model, iteration = load_model_from_checkpoint(os.path.join(root, "data/tinystories_checkpoint.pt"), device=device)
+    model.eval()
+    print(f"Loaded model from checkpoint at iteration {iteration}")
+
+    vocab_file = os.path.join(root, "cs336_basics/tinystories_output/vocab.json")
+    merges_file = os.path.join(root, "cs336_basics/tinystories_output/merges.txt")
+
+    print("Loading tokenizer...")
+    tokenizer = Tokenizer.from_files(vocab_file, merges_file, special_tokens=["<|endoftext|>"])
+
+    decoded = decoding(model, tokenizer, "I miss you", 256, eos_token='<|endoftext|>')
+    print(decoded)

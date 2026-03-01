@@ -1,0 +1,68 @@
+using device: mps
+Model has 22,696,448 parameters
+Starting from scratch
+iter 100/5000 | loss 3.6526 | lr 9.90e-04 | time 35.6s
+iter 200/5000 | loss 2.9223 | lr 9.99e-04 | time 68.1s
+iter 300/5000 | loss 2.6883 | lr 9.96e-04 | time 100.7s
+iter 400/5000 | loss 2.5118 | lr 9.91e-04 | time 133.4s
+iter 500/5000 | loss 2.3766 | lr 9.84e-04 | time 166.1s
+iter 500/5000 | val_loss 2.4132
+iter 600/5000 | loss 2.3543 | lr 9.75e-04 | time 209.7s
+iter 700/5000 | loss 2.2843 | lr 9.64e-04 | time 242.3s
+iter 800/5000 | loss 2.1569 | lr 9.51e-04 | time 274.9s
+iter 900/5000 | loss 2.1857 | lr 9.36e-04 | time 307.4s
+iter 1000/5000 | loss 2.0818 | lr 9.20e-04 | time 340.1s
+iter 1000/5000 | val_loss 2.1209
+Saved checkpoint to data/checkpoint.pt
+iter 1100/5000 | loss 1.9485 | lr 9.02e-04 | time 383.8s
+iter 1200/5000 | loss 2.1212 | lr 8.82e-04 | time 416.4s
+iter 1300/5000 | loss 2.0076 | lr 8.61e-04 | time 448.9s
+iter 1400/5000 | loss 1.9971 | lr 8.38e-04 | time 481.4s
+iter 1500/5000 | loss 1.8106 | lr 8.14e-04 | time 513.8s
+iter 1500/5000 | val_loss 1.9767
+iter 1600/5000 | loss 1.9986 | lr 7.88e-04 | time 557.6s
+iter 1700/5000 | loss 1.9469 | lr 7.62e-04 | time 590.6s
+iter 1800/5000 | loss 1.8710 | lr 7.34e-04 | time 623.0s
+iter 1900/5000 | loss 1.8734 | lr 7.06e-04 | time 655.6s
+iter 2000/5000 | loss 1.7741 | lr 6.76e-04 | time 688.1s
+iter 2000/5000 | val_loss 1.8704
+Saved checkpoint to data/checkpoint.pt
+iter 2100/5000 | loss 1.8930 | lr 6.46e-04 | time 731.7s
+iter 2200/5000 | loss 1.8213 | lr 6.15e-04 | time 764.2s
+iter 2300/5000 | loss 1.7985 | lr 5.84e-04 | time 796.8s
+iter 2400/5000 | loss 1.9343 | lr 5.53e-04 | time 829.3s
+iter 2500/5000 | loss 1.8321 | lr 5.21e-04 | time 861.7s
+iter 2500/5000 | val_loss 1.8065
+iter 2600/5000 | loss 1.8084 | lr 4.89e-04 | time 905.0s
+iter 2700/5000 | loss 1.7668 | lr 4.58e-04 | time 937.5s
+iter 2800/5000 | loss 1.8569 | lr 4.26e-04 | time 970.0s
+iter 2900/5000 | loss 1.8384 | lr 3.95e-04 | time 1002.5s
+iter 3000/5000 | loss 1.7506 | lr 3.64e-04 | time 1034.9s
+iter 3000/5000 | val_loss 1.7428
+Saved checkpoint to data/checkpoint.pt
+iter 3100/5000 | loss 1.6980 | lr 3.34e-04 | time 1078.6s
+iter 3200/5000 | loss 1.7409 | lr 3.05e-04 | time 1111.1s
+iter 3300/5000 | loss 1.7562 | lr 2.76e-04 | time 1143.6s
+iter 3400/5000 | loss 1.6926 | lr 2.49e-04 | time 1176.1s
+iter 3500/5000 | loss 1.6834 | lr 2.22e-04 | time 1208.6s
+iter 3500/5000 | val_loss 1.7057
+iter 3600/5000 | loss 1.7433 | lr 1.97e-04 | time 1252.0s
+iter 3700/5000 | loss 1.7350 | lr 1.72e-04 | time 1284.4s
+iter 3800/5000 | loss 1.8488 | lr 1.50e-04 | time 1316.9s
+iter 3900/5000 | loss 1.7000 | lr 1.28e-04 | time 1349.5s
+iter 4000/5000 | loss 1.6144 | lr 1.08e-04 | time 1381.9s
+iter 4000/5000 | val_loss 1.6734
+Saved checkpoint to data/checkpoint.pt
+iter 4100/5000 | loss 1.7162 | lr 9.03e-05 | time 1425.4s
+iter 4200/5000 | loss 1.6436 | lr 7.39e-05 | time 1457.9s
+iter 4300/5000 | loss 1.6595 | lr 5.92e-05 | time 1490.8s
+iter 4400/5000 | loss 1.6156 | lr 4.63e-05 | time 1524.1s
+iter 4500/5000 | loss 1.7057 | lr 3.53e-05 | time 1557.4s
+iter 4500/5000 | val_loss 1.6343
+iter 4600/5000 | loss 1.6800 | lr 2.63e-05 | time 1601.9s
+iter 4700/5000 | loss 1.6532 | lr 1.92e-05 | time 1635.3s
+iter 4800/5000 | loss 1.7020 | lr 1.41e-05 | time 1668.6s
+iter 4900/5000 | loss 1.6602 | lr 1.10e-05 | time 1702.0s
+iter 5000/5000 | loss 1.6344 | lr 1.00e-05 | time 1735.3s
+iter 5000/5000 | val_loss 1.6266
+Saved checkpoint to data/checkpoint.pt

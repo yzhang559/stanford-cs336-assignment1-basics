@@ -24,12 +24,15 @@ def data_loading(data: np.ndarray, batch_size: int, context_length: int, device:
 
 
 def save_checkpoint(model: torch.nn.Module, optimizer: torch.optim.Optimizer, iteration: int,
-                    out: Union[str, os.PathLike, BinaryIO]):
-    torch.save({
+                    out: Union[str, os.PathLike, BinaryIO], model_config: dict = None):
+    checkpoint = {
         "iteration": iteration,
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
-    }, out)
+    }
+    if model_config is not None:
+        checkpoint["model_config"] = model_config
+    torch.save(checkpoint, out)
 
     if isinstance(out, (str, os.PathLike)):
         print(f"Saved checkpoint to {out}")
@@ -46,31 +49,57 @@ def load_checkpoint(src: Union[str, os.PathLike, BinaryIO], model: torch.nn.Modu
     return state["iteration"]
 
 
+def load_model_from_checkpoint(checkpoint_path: Union[str, os.PathLike], device=None):
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    
+    if "model_config" not in checkpoint:
+        raise ValueError("Checkpoint does not contain model_config. Please retrain with updated save_checkpoint.")
+    
+    config = checkpoint["model_config"]
+    model = TransformerLM(
+        vocab_size=config["vocab_size"],
+        context_length=config["context_length"],
+        d_model=config["d_model"],
+        num_layers=config["num_layers"],
+        num_heads=config["num_heads"],
+        d_ff=config["d_ff"],
+        theta=config["theta"],
+        device=device,
+        dtype=torch.float32
+    )
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.to(device)
+    
+    return model, checkpoint["iteration"]
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Train TransformerLM")
+    
+    # Get project root directory (parent of cs336_basics)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # Model hyperparameters
     parser.add_argument("--vocab_size", type=int, default=10000)
-    parser.add_argument("--context_length", type=int, default=128)
-    parser.add_argument("--d_model", type=int, default=64)
-    parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--num_heads", type=int, default=4)
-    parser.add_argument("--d_ff", type=int, default=256)
+    parser.add_argument("--context_length", type=int, default=256)
+    parser.add_argument("--d_model", type=int, default=512)
+    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--num_heads", type=int, default=16)
+    parser.add_argument("--d_ff", type=int, default=1344)
     parser.add_argument("--rope_theta", type=float, default=10000.0)
 
     # Training hyperparameters
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--max_iters", type=int, default=1000)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--max_iters", type=int, default=5000)
     parser.add_argument("--lr_max", type=float, default=1e-3)
     parser.add_argument("--lr_min", type=float, default=1e-5)
     parser.add_argument("--weight_decay", type=float, default=0.1)
     parser.add_argument("--warmup_iters", type=int, default=100)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
 
-    # Data paths
-    parser.add_argument("--train_data", type=str, default="data/TinyStoriesV2-GPT4-train.npy")
-    parser.add_argument("--valid_data", type=str, default="data/TinyStoriesV2-GPT4-valid.npy")
-    parser.add_argument("--checkpoint_path", type=str, default="checkpoint.pt")
+    parser.add_argument("--train_data", type=str, default=os.path.join(project_root, "data/TinyStoriesV2-GPT4-train.npy"))
+    parser.add_argument("--valid_data", type=str, default=os.path.join(project_root, "data/TinyStoriesV2-GPT4-valid.npy"))
+    parser.add_argument("--checkpoint_path", type=str, default=os.path.join(project_root, "data/checkpoint.pt"))
 
     # Logging/eval intervals
     parser.add_argument("--log_interval", type=int, default=100)
@@ -162,7 +191,16 @@ def run_train(args):
 
         # ============ Checkpointing ============
         if (iteration + 1) % args.save_interval == 0:
-            save_checkpoint(model, optimizer, iteration + 1, args.checkpoint_path)
+            model_config = {
+                "vocab_size": args.vocab_size,
+                "context_length": args.context_length,
+                "d_model": args.d_model,
+                "num_layers": args.num_layers,
+                "num_heads": args.num_heads,
+                "d_ff": args.d_ff,
+                "theta": args.rope_theta,
+            }
+            save_checkpoint(model, optimizer, iteration + 1, args.checkpoint_path, model_config)
 
 
 if __name__ == '__main__':
