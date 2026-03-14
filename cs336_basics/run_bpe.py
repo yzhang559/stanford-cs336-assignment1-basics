@@ -27,5 +27,6 @@ def train_bpe_expts_owt():
 
 
 if __name__ == '__main__':
-    train_bpe_tinystories()
-    get_longest_token(HERE / TINY_STORY_DIR / "vocab.json")
+    # train_bpe_tinystories()
+    train_bpe_expts_owt()
+    get_longest_token(HERE / OPEN_WEB_DIR / "vocab.json")
