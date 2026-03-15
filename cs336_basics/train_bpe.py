@@ -58,7 +58,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     special_tokens = set(special_tokens)
     merges: list[tuple[bytes, bytes]] = []
     w_counts: collections.Counter[bytes] = collections.Counter()
-    num_worker = cpu_count()
+    num_worker = min(cpu_count(), 4)
 
     # read the file and split them into chunks
     with open(input_path, "rb") as f:
