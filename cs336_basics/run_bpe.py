@@ -28,7 +28,7 @@ def train_bpe_expts_owt(input_path, vocab_size=32000):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train BPE on input data')
-    parser.add_argument('input_path', type=str, 
+    parser.add_argument('--input_path', type=str,
                        help='Path to input training data file')
     parser.add_argument('--vocab-size', type=int, default=32000,
                        help='Vocabulary size (default: 32000)')
