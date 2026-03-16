@@ -89,8 +89,8 @@ def parse_args():
     parser.add_argument("--rope_theta", type=float, default=10000.0)
 
     # Training hyperparameters
-    parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--max_iters", type=int, default=5000)
+    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--max_iters", type=int, default=10000)
     parser.add_argument("--lr_max", type=float, default=1e-3)
     parser.add_argument("--lr_min", type=float, default=1e-5)
     parser.add_argument("--weight_decay", type=float, default=0.1)

@@ -58,7 +58,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     special_tokens = set(special_tokens)
     merges: list[tuple[bytes, bytes]] = []
     w_counts: collections.Counter[bytes] = collections.Counter()
-    num_worker = cpu_count()
+    num_worker = min(cpu_count(), 4)
 
     # read the file and split them into chunks
     with open(input_path, "rb") as f:
@@ -97,6 +97,15 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
 
         update_freq(p_freq, pair2word, highest_pair, w_freq)
 
+        if (i + 1) % 100 == 0:
+            print(
+                f"merge {i + 1}/{max_merge} | "
+                f"pairs={len(p_freq)} | "
+                f"words={len(w_freq)} | "
+                f"new_token_len={len(new_token)}",
+                flush=True
+            )
+
     return vocab, merges
 
 
@@ -117,32 +126,50 @@ def get_pair_freq(w_freq, special_tk, pair2word):
 
 
 def update_freq(p_freq, pair2word, highest_pair, w_freq):
-    to_processed = list(pair2word.pop(highest_pair))
-    for word in to_processed:
-        if word not in w_freq:
+    words_to_process = list(pair2word.pop(highest_pair))
+
+    def _pairs(seq):
+        return zip(seq[:-1], seq[1:])
+
+    def _decrease_pair_freq(word, count):
+        for pair in _pairs(word):
+            if pair not in p_freq:
+                continue
+            new_count = p_freq.get(pair, 0) - count
+            if new_count:
+                p_freq[pair] = new_count
+            else:
+                del p_freq[pair]
+
+    def _unlink_word_from_pairs(word):
+        for pair in set(_pairs(word)):
+            words = pair2word.get(pair)
+            if not words:
+                continue
+            words.discard(word)
+            if not words:
+                del pair2word[pair]
+
+    def _increase_pair_freq(word, count):
+        for pair in _pairs(word):
+            p_freq[pair] += count
+            pair2word[pair].add(word)
+
+    for old_word in words_to_process:
+        if old_word not in w_freq:
             continue
 
-        count = w_freq.pop(word)
-        for pair in zip(word[:-1], word[1:]):
-            if pair in p_freq:
-                p_freq[pair] = p_freq.get(pair, 0) - count
-                if p_freq[pair] == 0:
-                    del p_freq[pair]
-        for pair in set(zip(word[:-1], word[1:])):
-            if pair in pair2word:
-                pair2word[pair].discard(word)
-                if not pair2word[pair]:
-                    del pair2word[pair]
+        count = w_freq.pop(old_word)
+        _decrease_pair_freq(old_word, count)
+        _unlink_word_from_pairs(old_word)
 
-        new_word = merge(word, highest_pair)
+        new_word = merge(old_word, highest_pair)
         w_freq[new_word] = w_freq.get(new_word, 0) + count
 
         if len(new_word) < 2:
             continue
 
-        for pair in zip(new_word[:-1], new_word[1:]):
-            p_freq[pair] += count
-            pair2word[pair].add(new_word)
+        _increase_pair_freq(new_word, count)
 
 
 def merge(w, pair) -> tuple[bytes]:
