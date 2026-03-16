@@ -112,3 +112,15 @@ because attention's quadratic operations (QK^T and Attention@V) dominate at long
 The attention component grows from 29.5% to 46.8% of total FLOPs, while FFN drops from 67% to 51% and 
 LM head drops from 3.6% to 1.8%, showing that attention becomes the bottleneck at long context lengths.
 
+7 Experiments
+```shell
+jupyter nbconvert --clear-output --inplace experiments_plot.ipynb
+```
+Tune the learning rate
+batch_size: 128
+steps: 10000
+lr: 1e-3
+
+![Learning Rate Loss Comparison](plots/lr_loss.png)
+
+![Batch Size Loss Comparison](plots/batch_size_loss_20k.png)
