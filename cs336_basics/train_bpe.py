@@ -97,6 +97,15 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
 
         update_freq(p_freq, pair2word, highest_pair, w_freq)
 
+        if (i + 1) % 100 == 0:
+            print(
+                f"merge {i + 1}/{max_merge} | "
+                f"pairs={len(p_freq)} | "
+                f"words={len(w_freq)} | "
+                f"new_token_len={len(new_token)}",
+                flush=True
+            )
+
     return vocab, merges
 
 
