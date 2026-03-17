@@ -97,6 +97,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
         boundaries = find_chunk_boundaries(f, num_worker, '<|endoftext|>'.encode('utf8'))
 
     jobs = list(zip(boundaries[:-1], boundaries[1:]))
+    print(f"Pre-tokenizing with {len(jobs)} workers...", flush=True)
 
     # multi process 1490 ms train_bpe(), pre_tokenize is not bottleneck
     with ProcessPoolExecutor(max_workers=min(num_worker, len(jobs))) as executor:
@@ -105,22 +106,28 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
             w_counts.update(fu.result())
     # single process: pre_tokenize 1271 ms / 2185 ms 58% of train_bpe()
     # w_counts = pre_tokenize(text, special_tokens)
+    print(f"Pre-tokenization done. Unique words: {len(w_counts)}", flush=True)
 
+    print("Building w_freq...", flush=True)
     w_freq = {
         tuple(bytes([b]) for b in word): cnt for word, cnt in w_counts.items()
     }
+    print(f"w_freq built. Size: {len(w_freq)}", flush=True)
 
     sp_token_tuple = {
         tuple(bytes([b]) for b in s.encode('utf-8')) for s in special_tokens
     }
 
+    print("Building pair frequencies...", flush=True)
     pair2word = collections.defaultdict(set)
     p_freq, pair2word = get_pair_freq(w_freq, sp_token_tuple, pair2word)
+    print(f"Initial pairs: {len(p_freq)}. Building heap...", flush=True)
 
     # Build max-heap: use negative count for max-heap behavior
     # Heap entries: (-count, LexicographicMax) - LexicographicMax reverses comparison for correct tie-breaking
     pair_heap = [(-cnt, LexicographicMax(pair)) for pair, cnt in p_freq.items()]
     heapq.heapify(pair_heap)
+    print(f"Heap built. Starting {max_merge} merges...", flush=True)
 
     for i in range(max_merge):
         if not pair_heap:
@@ -142,7 +149,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
         merges.append(highest_pair)
         vocab[len(vocab)] = new_token
 
-        update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap)
+        update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap, i)
 
         if (i + 1) % 100 == 0:
             print(
@@ -168,8 +175,10 @@ def get_pair_freq(w_freq, special_tk, pair2word):
     return freq, pair2word
 
 
-def update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap):
+def update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap, merge_idx=0):
     words_to_process = list(pair2word.pop(highest_pair))
+    if len(words_to_process) > 100000:
+        print(f"  merge {merge_idx}: processing {len(words_to_process)} words for pair {highest_pair}", flush=True)
     # Remove the merged pair from p_freq so stale check works
     del p_freq[highest_pair]
 
