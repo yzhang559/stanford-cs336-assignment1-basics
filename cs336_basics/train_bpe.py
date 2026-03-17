@@ -1,8 +1,40 @@
+"""
+Byte Pair Encoding (BPE) Training Algorithm
+============================================
+
+BPE builds a vocabulary by iteratively merging the most frequent adjacent byte pairs.
+
+Algorithm:
+1. Pre-tokenize: Split text into words using regex pattern (GPT-2 style), count word frequencies
+2. Initialize vocabulary with 256 single-byte tokens + special tokens
+3. Repeat until vocab_size reached:
+   a. Count frequencies of all adjacent byte pairs across all words
+   b. Find the most frequent pair (tie-break: lexicographically larger pair wins)
+   c. Merge that pair into a new token, add to vocabulary
+   d. Update word representations and pair frequencies
+
+Optimization - Lazy Heap for O(log n) max-finding:
+- Must push on BOTH increase AND decrease to maintain correct tie-breaking order
+"""
+
 from concurrent.futures.process import ProcessPoolExecutor
 from multiprocessing import cpu_count
 import collections
+import heapq
 import regex as re
+
 assert re.__name__ == "regex"  # sanity check
+
+
+class LexicographicMax:
+    """Wrapper for heap tie-breaking: picks lexicographically larger pair."""
+
+    def __init__(self, pair):
+        self.pair = pair
+
+    def __lt__(self, other):
+        return self.pair > other.pair
+
 
 from cs336_basics.pretokenization_example import find_chunk_boundaries, HERE
 
@@ -58,7 +90,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     special_tokens = set(special_tokens)
     merges: list[tuple[bytes, bytes]] = []
     w_counts: collections.Counter[bytes] = collections.Counter()
-    num_worker = min(cpu_count(), 4)
+    num_worker = cpu_count()
 
     # read the file and split them into chunks
     with open(input_path, "rb") as f:
@@ -85,17 +117,32 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     pair2word = collections.defaultdict(set)
     p_freq, pair2word = get_pair_freq(w_freq, sp_token_tuple, pair2word)
 
+    # Build max-heap: use negative count for max-heap behavior
+    # Heap entries: (-count, LexicographicMax) - LexicographicMax reverses comparison for correct tie-breaking
+    pair_heap = [(-cnt, LexicographicMax(pair)) for pair, cnt in p_freq.items()]
+    heapq.heapify(pair_heap)
+
     for i in range(max_merge):
-        if not p_freq:
+        if not pair_heap:
             break
 
-        highest_pair = get_most_frequent_pair(p_freq)
+        # Pop stale entries until we find a valid one
+        while pair_heap:
+            neg_cnt, max_pair = heapq.heappop(pair_heap)
+            highest_pair = max_pair.pair
+            current_cnt = p_freq.get(highest_pair, 0)
+            if current_cnt == -neg_cnt and current_cnt > 0:
+                break
+            # Stale entry, skip it
+        else:
+            # Heap exhausted
+            break
 
         new_token = highest_pair[0] + highest_pair[1]
         merges.append(highest_pair)
         vocab[len(vocab)] = new_token
 
-        update_freq(p_freq, pair2word, highest_pair, w_freq)
+        update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap)
 
         if (i + 1) % 100 == 0:
             print(
@@ -107,10 +154,6 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
             )
 
     return vocab, merges
-
-
-def get_most_frequent_pair(freq):
-    return max(freq, key=lambda p: (freq[p], p))
 
 
 def get_pair_freq(w_freq, special_tk, pair2word):
@@ -125,8 +168,10 @@ def get_pair_freq(w_freq, special_tk, pair2word):
     return freq, pair2word
 
 
-def update_freq(p_freq, pair2word, highest_pair, w_freq):
+def update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap):
     words_to_process = list(pair2word.pop(highest_pair))
+    # Remove the merged pair from p_freq so stale check works
+    del p_freq[highest_pair]
 
     def _pairs(seq):
         return zip(seq[:-1], seq[1:])
@@ -138,6 +183,8 @@ def update_freq(p_freq, pair2word, highest_pair, w_freq):
             new_count = p_freq.get(pair, 0) - count
             if new_count:
                 p_freq[pair] = new_count
+                # Push updated count to heap so it can be found at correct priority
+                heapq.heappush(pair_heap, (-new_count, LexicographicMax(pair)))
             else:
                 del p_freq[pair]
 
@@ -152,8 +199,12 @@ def update_freq(p_freq, pair2word, highest_pair, w_freq):
 
     def _increase_pair_freq(word, count):
         for pair in _pairs(word):
-            p_freq[pair] += count
+            old_cnt = p_freq.get(pair, 0)
+            new_cnt = old_cnt + count
+            p_freq[pair] = new_cnt
             pair2word[pair].add(word)
+            # Push new count to heap (lazy update)
+            heapq.heappush(pair_heap, (-new_cnt, LexicographicMax(pair)))
 
     for old_word in words_to_process:
         if old_word not in w_freq:
@@ -189,4 +240,3 @@ if __name__ == '__main__':
     vocab, merges = train_bpe(HERE / "corpus.txt", 256 + 6, special_tokens=["<|endoftext|>"])
     print(vocab)
     print(merges)
-
