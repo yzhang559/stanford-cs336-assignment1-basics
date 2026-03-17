@@ -22,6 +22,7 @@ from multiprocessing import cpu_count
 import collections
 import heapq
 import regex as re
+import time
 
 assert re.__name__ == "regex"  # sanity check
 
@@ -128,6 +129,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     pair_heap = [(-cnt, LexicographicMax(pair)) for pair, cnt in p_freq.items()]
     heapq.heapify(pair_heap)
     print(f"Heap built. Starting {max_merge} merges...", flush=True)
+    merge_start = time.time()
 
     for i in range(max_merge):
         if not pair_heap:
@@ -152,11 +154,12 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
         update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap, i)
 
         if (i + 1) % 100 == 0:
+            elapsed = time.time() - merge_start
             print(
                 f"merge {i + 1}/{max_merge} | "
                 f"pairs={len(p_freq)} | "
                 f"words={len(w_freq)} | "
-                f"new_token_len={len(new_token)}",
+                f"time={elapsed:.1f}s",
                 flush=True
             )
 
@@ -176,60 +179,69 @@ def get_pair_freq(w_freq, special_tk, pair2word):
 
 
 def update_freq(p_freq, pair2word, highest_pair, w_freq, pair_heap, merge_idx=0):
-    words_to_process = list(pair2word.pop(highest_pair))
+    """
+    Merge highest_pair in all words, update frequencies.
+    Returns set of changed pairs to push to heap once at the end.
+    """
+    words_to_process = pair2word.pop(highest_pair)
     if len(words_to_process) > 100000:
         print(f"  merge {merge_idx}: processing {len(words_to_process)} words for pair {highest_pair}", flush=True)
     # Remove the merged pair from p_freq so stale check works
     del p_freq[highest_pair]
 
-    def _pairs(seq):
-        return zip(seq[:-1], seq[1:])
-
-    def _decrease_pair_freq(word, count):
-        for pair in _pairs(word):
-            if pair not in p_freq:
-                continue
-            new_count = p_freq.get(pair, 0) - count
-            if new_count:
-                p_freq[pair] = new_count
-                # Push updated count to heap so it can be found at correct priority
-                heapq.heappush(pair_heap, (-new_count, LexicographicMax(pair)))
-            else:
-                del p_freq[pair]
-
-    def _unlink_word_from_pairs(word):
-        for pair in set(_pairs(word)):
-            words = pair2word.get(pair)
-            if not words:
-                continue
-            words.discard(word)
-            if not words:
-                del pair2word[pair]
-
-    def _increase_pair_freq(word, count):
-        for pair in _pairs(word):
-            old_cnt = p_freq.get(pair, 0)
-            new_cnt = old_cnt + count
-            p_freq[pair] = new_cnt
-            pair2word[pair].add(word)
-            # Push new count to heap (lazy update)
-            heapq.heappush(pair_heap, (-new_cnt, LexicographicMax(pair)))
+    merged_token = highest_pair[0] + highest_pair[1]
+    changed_pairs = set()
 
     for old_word in words_to_process:
         if old_word not in w_freq:
             continue
 
         count = w_freq.pop(old_word)
-        _decrease_pair_freq(old_word, count)
-        _unlink_word_from_pairs(old_word)
+        
+        # Decrease freq for old pairs and unlink
+        for i in range(len(old_word) - 1):
+            pair = (old_word[i], old_word[i + 1])
+            if pair == highest_pair:
+                continue  # Already removed
+            p_freq[pair] -= count
+            changed_pairs.add(pair)
+            if p_freq[pair] <= 0:
+                del p_freq[pair]
+            # Unlink old_word from pair2word
+            pw = pair2word.get(pair)
+            if pw:
+                pw.discard(old_word)
+                if not pw:
+                    del pair2word[pair]
 
-        new_word = merge(old_word, highest_pair)
+        # Merge the word
+        new_word = []
+        i = 0
+        while i < len(old_word):
+            if i < len(old_word) - 1 and old_word[i] == highest_pair[0] and old_word[i + 1] == highest_pair[1]:
+                new_word.append(merged_token)
+                i += 2
+            else:
+                new_word.append(old_word[i])
+                i += 1
+        new_word = tuple(new_word)
+        
         w_freq[new_word] = w_freq.get(new_word, 0) + count
 
         if len(new_word) < 2:
             continue
 
-        _increase_pair_freq(new_word, count)
+        # Increase freq for new pairs
+        for j in range(len(new_word) - 1):
+            pair = (new_word[j], new_word[j + 1])
+            p_freq[pair] = p_freq.get(pair, 0) + count
+            pair2word[pair].add(new_word)
+            changed_pairs.add(pair)
+
+    # Push changed pairs to heap once at the end (not inside the loop)
+    for pair in changed_pairs:
+        if pair in p_freq and p_freq[pair] > 0:
+            heapq.heappush(pair_heap, (-p_freq[pair], LexicographicMax(pair)))
 
 
 def merge(w, pair) -> tuple[bytes]:
