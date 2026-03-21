@@ -1,5 +1,44 @@
 # CS336 Spring 2025 Assignment 1: Basics
 
+## Transformer LM under Strict Compute Budget
+
+This repo implements and trains a decoder-only Transformer language model from scratch on OpenWebText
+
+### Model and training configuration
+- Vocabulary size: 32,000
+- Context length: 256
+- Batch size: 256
+- Maximum iterations: 5,000
+- Peak learning rate: 1e-3
+- Model dimension (`d_model`): 512
+- Number of layers: 4
+- Number of attention heads: 16
+- Feed-forward dimension (`d_ff`): 1344
+- RoPE theta: 10,000
+- Minimum learning rate: 1e-5
+- Warmup iterations: 100
+- Weight decay: 0.1
+
+### Dataset
+
+- Training data: `/workspace/data/owt_train.npy`
+- Validation data: `/workspace/data/owt_valid.npy`
+
+### Token budget
+
+The total number of processed tokens was:
+
+`batch_size × max_iters × context_length = 256 × 5000 × 256 = 327,680,000`
+
+### Final result
+
+- Final validation loss: **4.0514**, beats baseline 5.0
+- Total wallclock training time in hours: **0.57 hours**, within the **1.5 H100-hour** budget
+
+### Validation curve
+![owt](plots/owt_loss.png)
+
+
 For a full description of the assignment, see the assignment handout at
 [cs336_spring2025_assignment1_basics.pdf](./cs336_spring2025_assignment1_basics.pdf)
 
