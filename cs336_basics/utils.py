@@ -43,6 +43,7 @@ def get_peak_rss_bytes():
 
 
 def save_output(vocab: dict[int, bytes], merges: list[tuple[bytes, bytes]], output_dir: str):
+    (HERE / output_dir).mkdir(parents=True, exist_ok=True)
     serializable_vocab = {k: list(v) for k, v in vocab.items()}
     with open(HERE / output_dir / VOCAB_FILE, "w", encoding="utf-8") as f:
         json.dump(serializable_vocab, f, ensure_ascii=False, indent=2)

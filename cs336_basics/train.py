@@ -107,6 +107,8 @@ def parse_args():
     parser.add_argument("--eval_steps", type=int, default=100)
     parser.add_argument("--save_interval", type=int, default=1000)
 
+    parser.add_argument("--max_wallclock_seconds", type=float, default=5400.0)
+
     # Device
     parser.add_argument("--device", type=str, default=None,
                         help="Device to use (cuda/mps/cpu). Auto-detected if not set.")
@@ -172,9 +174,21 @@ def run_train(args):
         # ============ Logging ============
         if (iteration + 1) % args.log_interval == 0:
             elapsed_time = time.time() - start_time
-            print(
-                f"iter {iteration + 1}/{args.max_iters} | loss {loss.item():.4f} | lr {current_lr:.2e} | time {elapsed_time:.1f}s")
+            steps_done = iteration + 1 - start_iter
+            avg_step_time = elapsed_time / steps_done
+            remaining_steps = args.max_iters - (iteration + 1)
+            eta_seconds = remaining_steps * avg_step_time
+            projected_total = elapsed_time + eta_seconds
 
+            print(
+                f"iter {iteration + 1}/{args.max_iters} | "
+                f"loss {loss.item():.4f} | "
+                f"lr {current_lr:.2e} | "
+                f"elapsed {elapsed_time:.1f}s | "
+                f"avg_step {avg_step_time:.3f}s | "
+                f"eta {eta_seconds / 60:.1f}m | "
+                f"projected_total {projected_total / 3600:.2f}h"
+            )
         # ============ Evaluation ============
         if (iteration + 1) % args.eval_interval == 0:
             model.eval()

@@ -1,0 +1,71 @@
+~/stanford-cs336-assignment1-basics# uv run python cs336_basics/train.py   --vocab_size 32000   --batch_size 256   --context_length 256   --max_iters 5000   --lr_max 1e-3   --train_data /workspace/data/owt_train.npy   --valid_data /workspace/data/owt_valid.npy   --checkpoint_path /workspace/data/owt_32k_checkpoint.pt
+Uninstalled 1 package in 38ms
+Installed 1 package in 84ms
+using device: cuda
+Model has 45,224,448 parameters
+Starting from scratch
+iter 100/5000 | loss 6.4575 | lr 9.90e-04 | elapsed 38.5s | avg_step 0.385s | eta 31.4m | projected_total 0.53h
+iter 200/5000 | loss 5.6289 | lr 9.99e-04 | elapsed 76.6s | avg_step 0.383s | eta 30.7m | projected_total 0.53h
+iter 300/5000 | loss 5.2656 | lr 9.96e-04 | elapsed 114.8s | avg_step 0.383s | eta 30.0m | projected_total 0.53h
+iter 400/5000 | loss 5.1153 | lr 9.91e-04 | elapsed 153.1s | avg_step 0.383s | eta 29.3m | projected_total 0.53h
+iter 500/5000 | loss 4.9484 | lr 9.84e-04 | elapsed 191.1s | avg_step 0.382s | eta 28.7m | projected_total 0.53h
+iter 500/5000 | val_loss 4.9443
+iter 600/5000 | loss 4.8918 | lr 9.75e-04 | elapsed 242.3s | avg_step 0.404s | eta 29.6m | projected_total 0.56h
+iter 700/5000 | loss 4.7317 | lr 9.64e-04 | elapsed 280.3s | avg_step 0.400s | eta 28.7m | projected_total 0.56h
+iter 800/5000 | loss 4.6982 | lr 9.51e-04 | elapsed 318.4s | avg_step 0.398s | eta 27.9m | projected_total 0.55h
+iter 900/5000 | loss 4.5988 | lr 9.36e-04 | elapsed 356.6s | avg_step 0.396s | eta 27.1m | projected_total 0.55h
+iter 1000/5000 | loss 4.6199 | lr 9.20e-04 | elapsed 394.7s | avg_step 0.395s | eta 26.3m | projected_total 0.55h
+iter 1000/5000 | val_loss 4.5767
+Saved checkpoint to /workspace/data/owt_32k_checkpoint.pt
+iter 1100/5000 | loss 4.5421 | lr 9.02e-04 | elapsed 452.4s | avg_step 0.411s | eta 26.7m | projected_total 0.57h
+iter 1200/5000 | loss 4.4884 | lr 8.82e-04 | elapsed 490.7s | avg_step 0.409s | eta 25.9m | projected_total 0.57h
+iter 1300/5000 | loss 4.4497 | lr 8.61e-04 | elapsed 528.8s | avg_step 0.407s | eta 25.1m | projected_total 0.57h
+iter 1400/5000 | loss 4.4153 | lr 8.38e-04 | elapsed 567.0s | avg_step 0.405s | eta 24.3m | projected_total 0.56h
+iter 1500/5000 | loss 4.4028 | lr 8.14e-04 | elapsed 605.2s | avg_step 0.403s | eta 23.5m | projected_total 0.56h
+iter 1500/5000 | val_loss 4.3887
+iter 1600/5000 | loss 4.3442 | lr 7.88e-04 | elapsed 656.5s | avg_step 0.410s | eta 23.3m | projected_total 0.57h
+iter 1700/5000 | loss 4.3572 | lr 7.62e-04 | elapsed 694.7s | avg_step 0.409s | eta 22.5m | projected_total 0.57h
+iter 1800/5000 | loss 4.2837 | lr 7.34e-04 | elapsed 732.8s | avg_step 0.407s | eta 21.7m | projected_total 0.57h
+iter 1900/5000 | loss 4.2964 | lr 7.06e-04 | elapsed 771.0s | avg_step 0.406s | eta 21.0m | projected_total 0.56h
+iter 2000/5000 | loss 4.2816 | lr 6.76e-04 | elapsed 809.2s | avg_step 0.405s | eta 20.2m | projected_total 0.56h
+iter 2000/5000 | val_loss 4.2893
+Saved checkpoint to /workspace/data/owt_32k_checkpoint.pt
+iter 2100/5000 | loss 4.2428 | lr 6.46e-04 | elapsed 863.2s | avg_step 0.411s | eta 19.9m | projected_total 0.57h
+iter 2200/5000 | loss 4.2606 | lr 6.15e-04 | elapsed 901.4s | avg_step 0.410s | eta 19.1m | projected_total 0.57h
+iter 2300/5000 | loss 4.2566 | lr 5.84e-04 | elapsed 939.5s | avg_step 0.408s | eta 18.4m | projected_total 0.57h
+iter 2400/5000 | loss 4.2786 | lr 5.53e-04 | elapsed 977.9s | avg_step 0.407s | eta 17.7m | projected_total 0.57h
+iter 2500/5000 | loss 4.1450 | lr 5.21e-04 | elapsed 1016.0s | avg_step 0.406s | eta 16.9m | projected_total 0.56h
+iter 2500/5000 | val_loss 4.2129
+iter 2600/5000 | loss 4.2239 | lr 4.89e-04 | elapsed 1067.4s | avg_step 0.411s | eta 16.4m | projected_total 0.57h
+iter 2700/5000 | loss 4.2074 | lr 4.58e-04 | elapsed 1105.6s | avg_step 0.409s | eta 15.7m | projected_total 0.57h
+iter 2800/5000 | loss 4.1360 | lr 4.26e-04 | elapsed 1143.8s | avg_step 0.409s | eta 15.0m | projected_total 0.57h
+iter 2900/5000 | loss 4.1483 | lr 3.95e-04 | elapsed 1182.0s | avg_step 0.408s | eta 14.3m | projected_total 0.57h
+iter 3000/5000 | loss 4.1106 | lr 3.64e-04 | elapsed 1220.3s | avg_step 0.407s | eta 13.6m | projected_total 0.56h
+iter 3000/5000 | val_loss 4.1495
+Saved checkpoint to /workspace/data/owt_32k_checkpoint.pt
+iter 3100/5000 | loss 4.1422 | lr 3.34e-04 | elapsed 1289.7s | avg_step 0.416s | eta 13.2m | projected_total 0.58h
+iter 3200/5000 | loss 4.1607 | lr 3.05e-04 | elapsed 1327.9s | avg_step 0.415s | eta 12.4m | projected_total 0.58h
+iter 3300/5000 | loss 4.0494 | lr 2.76e-04 | elapsed 1366.1s | avg_step 0.414s | eta 11.7m | projected_total 0.57h
+iter 3400/5000 | loss 4.1526 | lr 2.49e-04 | elapsed 1404.3s | avg_step 0.413s | eta 11.0m | projected_total 0.57h
+iter 3500/5000 | loss 4.1322 | lr 2.22e-04 | elapsed 1442.6s | avg_step 0.412s | eta 10.3m | projected_total 0.57h
+iter 3500/5000 | val_loss 4.1117
+iter 3600/5000 | loss 4.1367 | lr 1.97e-04 | elapsed 1494.1s | avg_step 0.415s | eta 9.7m | projected_total 0.58h
+iter 3700/5000 | loss 4.0681 | lr 1.72e-04 | elapsed 1532.3s | avg_step 0.414s | eta 9.0m | projected_total 0.58h
+iter 3800/5000 | loss 4.0963 | lr 1.50e-04 | elapsed 1570.5s | avg_step 0.413s | eta 8.3m | projected_total 0.57h
+iter 3900/5000 | loss 4.0945 | lr 1.28e-04 | elapsed 1608.7s | avg_step 0.412s | eta 7.6m | projected_total 0.57h
+iter 4000/5000 | loss 4.0583 | lr 1.08e-04 | elapsed 1647.0s | avg_step 0.412s | eta 6.9m | projected_total 0.57h
+iter 4000/5000 | val_loss 4.0768
+Saved checkpoint to /workspace/data/owt_32k_checkpoint.pt
+iter 4100/5000 | loss 4.1032 | lr 9.03e-05 | elapsed 1704.0s | avg_step 0.416s | eta 6.2m | projected_total 0.58h
+iter 4200/5000 | loss 4.0669 | lr 7.39e-05 | elapsed 1742.3s | avg_step 0.415s | eta 5.5m | projected_total 0.58h
+iter 4300/5000 | loss 4.0513 | lr 5.92e-05 | elapsed 1780.6s | avg_step 0.414s | eta 4.8m | projected_total 0.58h
+iter 4400/5000 | loss 4.0506 | lr 4.63e-05 | elapsed 1818.9s | avg_step 0.413s | eta 4.1m | projected_total 0.57h
+iter 4500/5000 | loss 4.0660 | lr 3.53e-05 | elapsed 1857.1s | avg_step 0.413s | eta 3.4m | projected_total 0.57h
+iter 4500/5000 | val_loss 4.0594
+iter 4600/5000 | loss 4.0476 | lr 2.63e-05 | elapsed 1908.5s | avg_step 0.415s | eta 2.8m | projected_total 0.58h
+iter 4700/5000 | loss 4.0248 | lr 1.92e-05 | elapsed 1946.8s | avg_step 0.414s | eta 2.1m | projected_total 0.58h
+iter 4800/5000 | loss 4.0654 | lr 1.41e-05 | elapsed 1985.0s | avg_step 0.414s | eta 1.4m | projected_total 0.57h
+iter 4900/5000 | loss 4.0554 | lr 1.10e-05 | elapsed 2023.3s | avg_step 0.413s | eta 0.7m | projected_total 0.57h
+iter 5000/5000 | loss 4.0989 | lr 1.00e-05 | elapsed 2061.5s | avg_step 0.412s | eta 0.0m | projected_total 0.57h
+iter 5000/5000 | val_loss 4.0514
+Saved checkpoint to /workspace/data/owt_32k_checkpoint.pt
